@@ -1,0 +1,101 @@
+﻿@page "/wallets-list"
+@using Wallets.Models
+@using Wallets.Services.Interfaces
+@inject IWalletApiService WalletApiService
+@inject INethereumApiService NethereumApiService
+
+<PageTitle>Список балансов</PageTitle>
+
+<p>Баланс запрашивается для списка адресов из БД</p>
+
+<form method="get" @onsubmit="OnFilterSubmit">
+    <div>
+        <label for="search">Поиск по адресу:</label>
+        <input type="text" id="search" @bind="@walletFilter.Search" />
+    </div>
+    <button type="submit">Применить фильтр</button>
+</form>
+
+@if (wallets is null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else if (!wallets.Any())
+{
+    <p><em>Нет кошельков для отображения.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Адрес</th>
+            <th>Баланс</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var wallet in wallets)
+        {
+            <tr>
+                <td>@wallet.Id</td>
+                <td>@wallet.Address</td>
+                <td>@wallet.Balance.ToString()</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+<Pagination ActivePageNumber="@currentPage"
+            TotalPages="@totalPages"
+            DisplayPages="5"
+            PageChanged="SetPage"
+            FirstLinkIcon="IconName.ChevronDoubleLeft"
+            PreviousLinkIcon="IconName.ChevronLeft"
+            NextLinkIcon="IconName.ChevronRight"
+            LastLinkIcon="IconName.ChevronDoubleRight" />
+}
+
+@code {
+    private List<Wallet> wallets;
+    private Wallet walletFilter = new Wallet { PageSize = 20, Page = 1 };
+    private int currentPage = 1;
+    private int totalPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPage(currentPage);
+    }
+
+    private async Task LoadPage(int page)
+    {
+        walletFilter.Page = page;
+        var result = await WalletApiService.GetWalletsAsync(walletFilter);
+        wallets = result.Items.ToList();
+        var totalCount = result.Total;
+        totalPages = (int)Math.Ceiling((double)totalCount / walletFilter.PageSize);
+        
+        var tasks = wallets.Select(async wallet =>
+        {
+            wallet.Balance = await NethereumApiService.GetBalanceAsync(wallet.Address);
+        });
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task SetPage(int page)
+    {
+        currentPage = page;
+        await LoadPage(currentPage);
+    }
+
+    private async Task OnFilterSubmit()
+    {
+        currentPage = 1;
+        await LoadPage(currentPage);
+    }
+
+    private bool CanGoToFirstPage => currentPage > 1;
+    private bool CanGoToPreviousPage => currentPage > 1;
+    private bool CanGoToNextPage => currentPage < totalPages;
+    private bool CanGoToLastPage => currentPage < totalPages;
+}

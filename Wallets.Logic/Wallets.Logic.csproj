@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Wallets.Data\Wallets.Data.csproj" />
+      <ProjectReference Include="..\Wallets.Models\Wallets.Models.csproj" />
+    </ItemGroup>
+
+</Project>
