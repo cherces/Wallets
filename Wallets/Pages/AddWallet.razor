@@ -1,0 +1,35 @@
+﻿@page "/add-wallet"
+@using Wallets.Models
+@using Wallets.Services.Interfaces
+@inject IWalletApiService WalletApiService
+
+<PageTitle>Добавление кошелька</PageTitle>
+
+<p>Здесь можно добавить новый кошелек в БД</p>
+
+<EditForm Model="wallet" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div>
+        <label for="address">Адрес кошелька:</label>
+        <InputText id="address" @bind-Value="wallet.Address" />
+    </div>
+
+    <button type="submit">Добавить</button>
+</EditForm>
+
+@if (newWalletId != null)
+{
+    <div class="alert alert-success">Кошелек успешно добавлен с номером №@newWalletId</div>
+}
+
+@code {
+    private Wallet wallet = new Wallet();
+    private string newWalletId;
+
+    private async Task HandleValidSubmit()
+    {
+        var response = await WalletApiService.AddWalletAsync(wallet);
+        newWalletId = response.ToString();
+        wallet = new Wallet();
+    }
+}
